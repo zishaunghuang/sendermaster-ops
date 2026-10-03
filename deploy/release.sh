@@ -10,6 +10,7 @@ base=/var/sofi/sendermaster-ops
 releases=$base/releases
 current=$base/current
 node=/opt/sendermaster-ops/runtime/bin/node
+cd "$base"
 exec 9>/run/lock/sendermaster-ops-release.lock
 flock -w 900 9
 main_revision=$(timeout 60 git -c credential.helper= -c core.hooksPath=/dev/null ls-remote https://github.com/zishaunghuang/sendermaster-ops.git refs/heads/main | awk '{print $1}')
@@ -40,6 +41,7 @@ trap cleanup EXIT
 runuser -u sendermaster-ops-deploy -- tar --extract --gzip --file=- --directory="$staging" --no-same-owner --no-same-permissions
 [[ -f "$staging/deploy/REVISION" && $(cat "$staging/deploy/REVISION") = "$revision" ]]
 [[ -s "$staging/.next/BUILD_ID" && -f "$staging/node_modules/prisma/build/index.js" ]]
+[[ -s "$staging/node_modules/@prisma/engines/schema-engine-debian-openssl-3.0.x" && -s "$staging/node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node" ]] || { echo "Production OpenSSL 3 Prisma engines are missing from the artifact." >&2; exit 65; }
 "$node" -e 'if(JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8")).name!=="sendermaster-ops") process.exit(1)' "$staging/package.json"
 # Refuse artifact-supplied production environment files; these live only on the server.
 if find "$staging" -maxdepth 1 -name '.env*' -print -quit | grep -q .; then

@@ -13,3 +13,5 @@
 查看版本：`cat /var/sofi/sendermaster-ops/.deployed-revision`；查看服务：`systemctl status sendermaster-ops`；查看发布审计：`journalctl -t sendermaster-ops-release`。发布锁和 Actions concurrency 防止同时切换；只接受发布时仍是远端 main HEAD 的提交。
 
 服务环境和首次 OWNER 不会在发版时重建，管理员账号、验证器及已生效的商户规则保留。
+
+GitHub runner 与生产服务器可能使用不同 OpenSSL 版本。CI 在 npm install 时通过 PRISMA_CLI_BINARY_TARGETS 下载 debian-openssl-1.1.x 和 debian-openssl-3.0.x CLI 引擎，Prisma generator 同时生成这两种客户端引擎。打包与发布前都验证生产 OpenSSL 3 引擎文件存在，生产目录保持只读，无需在线下载引擎或放宽文件权限。
