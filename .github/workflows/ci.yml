@@ -1,12 +1,31 @@
-name: Independent ops validation
+name: Ops CI and production deploy
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: ops_ci
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: sendermaster_ops_test_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ops_ci -d sendermaster_ops_test_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ops_ci:ci_only_password@127.0.0.1:5432/sendermaster_ops_test_ci
+      OPS_ORIGIN: http://127.0.0.1:3010
+      MFA_ENCRYPTION_KEY: '0000000000000000000000000000000000000000000000000000000000000000'
+      NEXT_TELEMETRY_DISABLED: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -14,8 +33,78 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run contract:generate && git diff --exit-code lib/api-types.ts
-      - run: npm test
-      - run: npm run build
+      - name: Check generated API contract
+        run: npm run contract:generate && git diff --exit-code lib/api-types.ts
+      - name: Migrate disposable test database
+        run: npm run db:deploy
+      - name: Build production bundle
+        run: npm run build
+      - name: Test actual HTTP authentication and permissions
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm start > "$RUNNER_TEMP/ops-http-test.log" 2>&1 &
+          app_pid=$!
+          trap 'kill "$app_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3010/ >/dev/null; then break; fi
+            if [ "$attempt" = 30 ]; then cat "$RUNNER_TEMP/ops-http-test.log"; exit 1; fi
+            sleep 1
+          done
+          RUN_OPS_HTTP_TESTS=1 npm test
+      - name: Package the tested Linux build
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$GITHUB_SHA" > deploy/REVISION
+          tar --exclude='.next/cache' --exclude='.next/trace' -czf "$RUNNER_TEMP/sendermaster-ops.tgz" \
+            .next node_modules package.json package-lock.json prisma next.config.ts \
+            app lib scripts contracts deploy
+      - uses: actions/upload-artifact@v4
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        with:
+          name: sendermaster-ops-${{ github.sha }}
+          path: ${{ runner.temp }}/sendermaster-ops.tgz
+          compression-level: 0
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 7
+  deploy:
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: https://ops.sendermaster.com
+    concurrency:
+      group: sendermaster-ops-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: sendermaster-ops-${{ github.sha }}
+          path: ${{ runner.temp }}/ops-artifact
+      - name: Deploy only the independent ops service
+        shell: bash
         env:
-          DATABASE_URL: postgresql://unused:unused@127.0.0.1:5432/unused
+          OPS_DEPLOY_SSH_KEY: ${{ secrets.OPS_DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$OPS_DEPLOY_SSH_KEY" ]; then
+            echo 'Configure repository Actions secret OPS_DEPLOY_SSH_KEY before deployment.' >&2
+            exit 1
+          fi
+          umask 077
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "$OPS_DEPLOY_SSH_KEY" > "$HOME/.ssh/ops_deploy"
+          install -m 600 deploy/known_hosts "$HOME/.ssh/ops_known_hosts"
+          ssh -i "$HOME/.ssh/ops_deploy" -o BatchMode=yes -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/ops_known_hosts" \
+            -o ConnectTimeout=20 -o ServerAliveInterval=30 -o ServerAliveCountMax=10 \
+            sendermaster-ops-deploy@8.208.30.175 "release $GITHUB_SHA" \
+            < "$RUNNER_TEMP/ops-artifact/sendermaster-ops.tgz"
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 https://ops.sendermaster.com/ >/dev/null
+          echo "Deployed $GITHUB_SHA to https://ops.sendermaster.com" >> "$GITHUB_STEP_SUMMARY"

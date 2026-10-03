@@ -3,3 +3,9 @@ node_modules/
 .env*
 !.env.example
 *.tsbuildinfo
+
+# Server-side releases and metadata; never commit production artifacts.
+current
+releases/
+.deployed-revision
+deploy/REVISION

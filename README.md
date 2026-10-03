@@ -27,6 +27,6 @@ OWNER 包括账号管理、恢复、释放/取消积压。OPERATOR 可查看、�
 
 contracts/openapi.json 来自 robot_store/docs/ops/openapi.json。升级接口时一起更新契约并运行 `npm run contract:generate`。生成的 lib/api-types.ts 提供跨项目类型；`npm test` 验证密码、加密及命令契约。`npm run build` 做完整生产构建。
 
-部署用 deploy/sendermaster-ops.service、nginx.conf、release.sh。独立仓库 CI 不会部署或重启 robot_store。发布前先安装核心系统内部路径的公网 deny 规则，再确认 DNS/TLS 和服务端防火墙。只授予部署用户重启 sendermaster-ops 的 sudo 权限；不要授予读取 robot_store 环境的权限。数据库备份包含 MFA 密文和会话摘要，应与 MFA 密钥分开保管。
+部署用 deploy/sendermaster-ops.service、nginx.conf、release.sh。独立仓库 CI 在 main 测试通过后自动部署 sendermaster-ops，只重启运维后台；不会部署或重启 robot_store。详见 [自动发布说明](deploy/README.md)。发布前先安装核心系统内部路径的公网 deny 规则，再确认 DNS/TLS 和服务端防火墙。只授予部署用户重启 sendermaster-ops 的 sudo 权限；不要授予读取 robot_store 环境的权限。数据库备份包含 MFA 密文和会话摘要，应与 MFA 密钥分开保管。
 
 生产灰度、AWS 事件栈、迁移和回滚的唯一执行说明位于 robot_store/docs/ops/runbook.md。本地构建通过不等于已经上线；生产 IAM、SNS 订阅、DNS 证书与真实邮箱验收需要独立完成。
