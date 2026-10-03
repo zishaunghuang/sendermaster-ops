@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+model Admin {
+  id String @id @default(cuid())
+  email String @unique
+  role String @default("VIEWER")
+  active Boolean @default(true)
+  passwordHash String?
+  totpSecret String?
+  lastTotpCounter Int @default(-1)
+  recoveryHashes String[]
+  setupHash String? @unique
+  setupExpiresAt DateTime?
+  createdAt DateTime @default(now())
+  sessions Session[]
+}
+model Session {
+  tokenHash String @id
+  adminId String
+  admin Admin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  verifiedAt DateTime
+  createdAt DateTime @default(now())
+  @@index([adminId])
+}
+model AuthAudit {
+  id String @id @default(cuid())
+  actorId String?
+  action String
+  targetId String?
+  requestId String
+  reason String?
+  createdAt DateTime @default(now())
+}
+model LoginBudget {
+  id String @id
+  count Int @default(0)
+  resetAt DateTime
+}

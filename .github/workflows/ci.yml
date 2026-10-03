@@ -1,0 +1,21 @@
+name: Independent ops validation
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run contract:generate && git diff --exit-code lib/api-types.ts
+      - run: npm test
+      - run: npm run build
+        env:
+          DATABASE_URL: postgresql://unused:unused@127.0.0.1:5432/unused

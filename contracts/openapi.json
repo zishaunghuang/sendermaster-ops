@@ -1,0 +1,586 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SenderMaster internal operations API",
+    "version": "1.0.0",
+    "description": "Ed25519 ops-v1 signed requests; see protocol.md. Never exposed through the public reverse proxy."
+  },
+  "paths": {
+    "/v2/internal/ops/overview": {
+      "get": {
+        "operationId": "overview",
+        "parameters": [],
+        "security": [
+          {
+            "OpsClaims": [],
+            "OpsSignature": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Persisted result. Writes can remain PENDING; poll operations/{id} after timeouts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Overview"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid signature, replay, expired claims or non-loopback caller"
+          },
+          "403": {
+            "description": "Role or recent MFA requirement"
+          },
+          "409": {
+            "description": "Version conflict or changed review batch"
+          }
+        }
+      }
+    },
+    "/v2/internal/ops/organizations": {
+      "get": {
+        "operationId": "organizations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "paused",
+                "connected",
+                "pending"
+              ]
+            }
+          }
+        ],
+        "security": [
+          {
+            "OpsClaims": [],
+            "OpsSignature": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Persisted result. Writes can remain PENDING; poll operations/{id} after timeouts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid signature, replay, expired claims or non-loopback caller"
+          },
+          "403": {
+            "description": "Role or recent MFA requirement"
+          },
+          "409": {
+            "description": "Version conflict or changed review batch"
+          }
+        }
+      }
+    },
+    "/v2/internal/ops/organizations/{id}": {
+      "get": {
+        "operationId": "organization",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "OpsClaims": [],
+            "OpsSignature": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Persisted result. Writes can remain PENDING; poll operations/{id} after timeouts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid signature, replay, expired claims or non-loopback caller"
+          },
+          "403": {
+            "description": "Role or recent MFA requirement"
+          },
+          "409": {
+            "description": "Version conflict or changed review batch"
+          }
+        }
+      }
+    },
+    "/v2/internal/ops/tasks": {
+      "get": {
+        "operationId": "tasks",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "organizationId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "campaignId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "OpsClaims": [],
+            "OpsSignature": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Persisted result. Writes can remain PENDING; poll operations/{id} after timeouts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid signature, replay, expired claims or non-loopback caller"
+          },
+          "403": {
+            "description": "Role or recent MFA requirement"
+          },
+          "409": {
+            "description": "Version conflict or changed review batch"
+          }
+        }
+      }
+    },
+    "/v2/internal/ops/reviews": {
+      "post": {
+        "operationId": "review",
+        "parameters": [],
+        "security": [
+          {
+            "OpsClaims": [],
+            "OpsSignature": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Persisted result. Writes can remain PENDING; poll operations/{id} after timeouts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid signature, replay, expired claims or non-loopback caller"
+          },
+          "403": {
+            "description": "Role or recent MFA requirement"
+          },
+          "409": {
+            "description": "Version conflict or changed review batch"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Review"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/internal/ops/commands": {
+      "post": {
+        "operationId": "command",
+        "parameters": [],
+        "security": [
+          {
+            "OpsClaims": [],
+            "OpsSignature": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Persisted result. Writes can remain PENDING; poll operations/{id} after timeouts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Operation"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid signature, replay, expired claims or non-loopback caller"
+          },
+          "403": {
+            "description": "Role or recent MFA requirement"
+          },
+          "409": {
+            "description": "Version conflict or changed review batch"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Command"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/internal/ops/operations": {
+      "get": {
+        "operationId": "operations",
+        "parameters": [],
+        "security": [
+          {
+            "OpsClaims": [],
+            "OpsSignature": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Persisted result. Writes can remain PENDING; poll operations/{id} after timeouts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid signature, replay, expired claims or non-loopback caller"
+          },
+          "403": {
+            "description": "Role or recent MFA requirement"
+          },
+          "409": {
+            "description": "Version conflict or changed review batch"
+          }
+        }
+      }
+    },
+    "/v2/internal/ops/operations/{id}": {
+      "get": {
+        "operationId": "operation",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "OpsClaims": [],
+            "OpsSignature": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Persisted result. Writes can remain PENDING; poll operations/{id} after timeouts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Operation"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid signature, replay, expired claims or non-loopback caller"
+          },
+          "403": {
+            "description": "Role or recent MFA requirement"
+          },
+          "409": {
+            "description": "Version conflict or changed review batch"
+          }
+        }
+      }
+    },
+    "/v2/internal/ops/alerts": {
+      "get": {
+        "operationId": "alerts",
+        "parameters": [],
+        "security": [
+          {
+            "OpsClaims": [],
+            "OpsSignature": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Persisted result. Writes can remain PENDING; poll operations/{id} after timeouts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid signature, replay, expired claims or non-loopback caller"
+          },
+          "403": {
+            "description": "Role or recent MFA requirement"
+          },
+          "409": {
+            "description": "Version conflict or changed review batch"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Command": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operationId",
+          "organizationId",
+          "action",
+          "reason",
+          "version"
+        ],
+        "properties": {
+          "operationId": {
+            "type": "string",
+            "minLength": 16,
+            "maxLength": 100
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "policy",
+              "pause",
+              "resume",
+              "release",
+              "cancel",
+              "alert-resolve"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 1000
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "limitMode": {
+            "type": "string",
+            "enum": [
+              "observe",
+              "enforce"
+            ]
+          },
+          "ratePerSecond": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0.01
+          },
+          "rollingDayLimit": {
+            "type": "integer",
+            "nullable": true,
+            "minimum": 1
+          },
+          "batchId": {
+            "type": "string"
+          },
+          "alertId": {
+            "type": "string"
+          }
+        }
+      },
+      "Review": {
+        "type": "object",
+        "required": [
+          "organizationId",
+          "taskIds"
+        ],
+        "properties": {
+          "organizationId": {
+            "type": "string"
+          },
+          "taskIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 100
+          }
+        }
+      },
+      "Overview": {
+        "type": "object",
+        "required": [
+          "organizations",
+          "tenants",
+          "paused",
+          "held",
+          "alerts",
+          "sent"
+        ],
+        "properties": {
+          "organizations": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "tenants": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "paused": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "held": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "alerts": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sent": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "Operation": {
+        "type": "object",
+        "required": [
+          "id",
+          "actorId",
+          "actorRole",
+          "action",
+          "status",
+          "reason"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "actorId": {
+            "type": "string"
+          },
+          "actorRole": {
+            "type": "string"
+          },
+          "organizationId": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "securitySchemes": {
+      "OpsClaims": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-ops-claims"
+      },
+      "OpsSignature": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-ops-signature"
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+[Unit]
+Description=SenderMaster independent operations portal
+After=network.target postgresql.service
+[Service]
+Type=simple
+User=sendermaster-ops
+Group=sendermaster-ops
+WorkingDirectory=/var/sofi/sendermaster-ops
+EnvironmentFile=/etc/sendermaster-ops/environment
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm run start
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+InaccessiblePaths=-/var/sofi/robot_store -/etc/robot-store
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/sofi/sendermaster-ops/.next/cache
+MemoryMax=768M
+CPUQuota=100%
+UMask=0077
+[Install]
+WantedBy=multi-user.target
